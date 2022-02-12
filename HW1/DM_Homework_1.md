@@ -36,7 +36,7 @@ IATA codes along with the number of flights arriving there are included.
     ##  9 LAX    1733
     ## 10 JFK    1358
 
-![](HW1/figure-markdown_strict/unnamed-chunk-5-1.png)
+![](Data-Mining-HW/HW1/figure-markdown_strict/unnamed-chunk-5-1.png)
 
 # Problem 2
 
@@ -63,10 +63,10 @@ Here, we display the top 10 most popular songs since 1958.
 
 ## Part B
 
-![](HW1/figure-markdown_strict/unnamed-chunk-9-1.png)
+![](Data-Mining-HW/HW1/figure-markdown_strict/unnamed-chunk-9-1.png)
 ## Part C
 
-![](HW1/figure-markdown_strict/unnamed-chunk-11-1.png)
+![](Data-Mining-HW/HW1/figure-markdown_strict/unnamed-chunk-11-1.png)
 
 # Problem 3
 
@@ -94,7 +94,7 @@ Here, we display the top 10 most popular songs since 1958.
 
 ## Part C
 
-![](HW1/figure-markdown_strict/unnamed-chunk-16-1.png)
+![](Data-Mining-HW/HW1/figure-markdown_strict/unnamed-chunk-16-1.png)
 
 # Problem 4
 
@@ -106,9 +106,9 @@ Here, we display the top 10 most popular songs since 1958.
     ## 5 50  9870.294 18333.22
     ## 6 75  9831.429 23763.09
 
-![](HW1/figure-markdown_strict/unnamed-chunk-20-1.png)
+![](Data-Mining-HW/HW1/figure-markdown_strict/unnamed-chunk-20-1.png)
 The RMSEs out of sample for 350 Trim and 65 AMG Trim are both minimized
 at K = 10. This may be because 10 is around the median value for K, and
 does the best at the minimizing bias-variance tradeoff.
 
-![](HW1/figure-markdown_strict/unnamed-chunk-22-1.png)![](DM_Homework_1_files/figure-markdown_strict/unnamed-chunk-22-2.png)
+![](Data-Mining-HW/HW1/figure-markdown_strict/unnamed-chunk-22-1.png)![](DM_Homework_1_files/figure-markdown_strict/unnamed-chunk-22-2.png)
