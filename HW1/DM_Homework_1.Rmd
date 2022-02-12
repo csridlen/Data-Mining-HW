@@ -1,0 +1,571 @@
+---
+title: "Homework 1"
+author: "Christina Ridlen"
+date: "2/11/2022"
+output: md_document
+---
+# Problem 1
+
+```{r, include=FALSE}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(mosaic)
+abia <- read_csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\ABIA.csv")
+abia <- abia %>%
+  mutate(Season = ifelse(Month == 12 |Month == 1 | Month == 2, 
+                          yes = "Winter", no = ifelse(Month == 3 | Month == 4 | Month == 5,yes = "Spring", no = ifelse(Month == 6 | Month == 7 | Month == 8, yes = "Summer", no = "Fall")))) 
+
+```
+
+## Which seasons have the most delays?
+
+A delay is considered to be a departure delay length of over 9 minutes, which is the average length of departure delays for all flights. The table below displays the number of delayed flights per season. It appears that Spring has the highest number of delays, while Fall significantly has the lowest.
+
+
+```{r, echo = FALSE}
+abia <- abia %>%
+  mutate(DelayLength = ifelse(between(DepDelay, -42, 0), yes = "Fast", no = 
+                                ifelse(between(DepDelay, 1,9), yes = "Below Average", no = 
+                                         ifelse(between(DepDelay, 10, 60), yes = "Above Average", no = 
+                                                  ifelse(between(DepDelay, 61, 120), yes = "Long", no = "Extremely Long")))))
+
+
+abiacount <- abia %>%
+  filter(DelayLength == "Above Average" | DelayLength == "Long" | DelayLength == "Extremely Long") %>%
+  group_by(Season) %>%
+  count(DelayLength) %>%
+  summarize(Counts = sum(n)) %>%
+  arrange(desc(Counts))
+
+abiacount
+
+```
+## Does this change by destination?
+
+We are considering only the top 10 arrival destinations for ABIA. Their IATA codes along with the number of flights arriving there are included.
+
+```{r, echo = FALSE}
+# Find top 10 destinations
+abiatop10 <- abia %>%
+  group_by(Dest) %>%
+  count(Dest, sort = TRUE) %>%
+  filter(Dest != "AUS" & n > 1349)
+abiatop10
+```
+
+```{r, include = FALSE}
+# Delays per season by destination
+abia_delays <- abia %>%
+  filter(DelayLength == "Above Average" | DelayLength == "Long" | DelayLength == "Extremely Long") %>%
+  filter(Dest == "DAL" | Dest == "DFW" | Dest == "IAH" | Dest == "PHX" | Dest == "DEN" | Dest == "ORD" | Dest == "HOU" | Dest == "ATL" | Dest == "LAX" | Dest == "JFK") %>%
+  group_by(Dest,Season) %>%
+  count(DelayLength) %>%
+  summarize(Counts = sum(n))
+
+abiacount1 <- abia %>%
+  filter(DelayLength == "Above Average" | DelayLength == "Long" | DelayLength == "Extremely Long") %>%
+  filter(Dest == "DAL" | Dest == "DFW" | Dest == "IAH" | Dest == "PHX" | Dest == "DEN" | Dest == "ORD" | Dest == "HOU" | Dest == "ATL" | Dest == "LAX" | Dest == "JFK") %>%
+  group_by(Dest, Season) %>%
+  count(DelayLength) %>%
+  summarize(DelayedFlights = sum(n))
+
+abiacount1
+
+abiacount2 <- abia %>%
+  filter(Dest == "DAL" | Dest == "DFW" | Dest == "IAH" | Dest == "PHX" | Dest == "DEN" | Dest == "ORD" | Dest == "HOU" | Dest == "ATL" | Dest == "LAX" | Dest == "JFK") %>%
+  group_by(Dest, Season) %>%
+  count(UniqueCarrier) %>%
+  summarize(TotalFlights = sum(n)) %>%
+  arrange(desc(TotalFlights))
+
+abiacount2
+
+# Merge datasets
+
+abiacount3 <- merge(abiacount1, abiacount2, by = c("Dest", "Season"))
+
+
+# Mutate with abiacount3
+abiacount3 <- abiacount3 %>%
+  mutate(DelayRate = trunc(DelayedFlights / TotalFlights * 100))
+abiacount3
+
+```
+
+```{r, echo = FALSE}
+# Graph Data
+      
+
+ggplot(abiacount3) +
+  geom_col(aes(x = Dest, y = DelayRate)) +
+  facet_wrap(~Season) +
+  labs(x = "IATA Airport Code",
+       y = "Percentage Flights Delayed",
+       title = "Times of Year with Most Delayed Flights",
+       caption = "Graph displays delayed flights per season. Fall appears to be the best time to fly for minimizing delays.")
+
+
+
+
+
+```
+
+# Problem 2
+
+
+```{r, include = FALSE}
+library(tidyverse)
+library(readr)
+
+billboard <- read_csv("C:\\Users\\tinar\\Downloads\\billboard.csv")
+
+billboard <- billboard %>%
+  select(performer, song, year, week, week_position)
+
+```
+Let's work with the `billboard` data set.
+
+## Part A
+
+Here, we display the top 10 most popular songs since 1958.
+```{r, include  = FALSE}
+# Part A
+billboard1 <- billboard %>%
+  filter(year >= 1958) %>%
+  group_by(performer, song) %>%
+  summarize(count = n()) %>%
+  arrange(desc(count)) %>%
+  filter(count > 62)
+```
+```{r, echo = FALSE}
+
+billboard1
+```
+## Part B
+
+```{r, echo = FALSE}
+unique_data <- billboard %>%
+  filter(year != 1958 & year != 2021) %>%
+  group_by(year) %>%
+  summarize(n_unique = length(unique(song)))
+
+# Plot number of unique songs
+ggplot(unique_data) + 
+  geom_line(aes(x = year, y = n_unique)) +
+  labs(x = "Year", 
+       y = "Number of Unique Songs",
+       title = "Number of Unique Songs by Year",
+       caption = "The graph shows the trend of musical diversity from 1960 to 2020")
+
+
+```
+## Part C
+
+```{r, include = FALSE}
+# Find artists with 30+ 10-week hits
+billboard3 <- billboard %>%
+  filter(year >= 1958) %>%
+  group_by(performer, song) %>%
+  summarize(count = n()) %>%
+  filter(count >= 10) %>%
+  ungroup(song) %>%
+  summarize(perfcount = n()) %>%
+  filter(perfcount >= 30)
+```
+```{r, echo = FALSE}
+# Create bar plot
+ggplot(billboard3) +
+  geom_col(aes(fct_rev(fct_reorder(performer, perfcount)), perfcount, fill=performer)) +
+  coord_flip() +
+  guides(fill = "none") +
+  labs(x = "Number of 10-week hits",
+       y = "Performer",
+       title = "Number of 10-week hits for Billboard Top Artists",
+       caption = "Bar graph shows the number of top hits for the 19 artists with 30+ 10-week hits. Lots of country.")
+```
+
+# Problem 3
+```{r data, include = FALSE}
+olympics_top20 <- read_csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\olympics_top20.csv")
+
+event_height95 <-olympics_top20 %>%
+  filter(sex == "F") %>%
+  group_by(event) %>%
+  summarize(height95 = quantile(height, probs = c(0.95)))
+```
+
+
+```{r, echo = FALSE}
+event_height95
+
+```
+## Part B
+```{r, include = FALSE}
+sd_height95 <- olympics_top20 %>%
+  filter(sex == "F") %>%
+  group_by(event) %>%
+  summarize(max_sdheight = max(sd(height))) %>%
+  arrange(desc(max_sdheight)) %>%
+  filter(event == "Rowing Women's Coxed Fours")
+```
+
+
+```{r, echo = FALSE}
+
+
+sd_height95
+
+```
+
+## Part C
+```{r, include = FALSE}
+mean_age_swim <- olympics_top20 %>%
+  filter(sport == "Swimming") %>%
+  group_by(year, sex) %>%
+  summarize(mean_age = mean(age))
+
+```
+
+
+
+```{r, echo = FALSE}
+ggplot(mean_age_swim) +
+  geom_line(aes(x = year, y = mean_age, col = sex)) +
+  labs(x = "Year", 
+       y = "Mean Age",
+       title = "Mean Age of Olympic Swimmers by Sex",
+       caption = "Line graph shows the variation in average age of Olympic swimmers over time and by sex.
+       Excepting 1900-1930, the upward trend is similar for both men and women.")
+```
+
+
+# Problem 4
+
+```{r, include = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(rsample)  # for creating train/test splits
+library(caret)
+library(modelr)
+library(parallel)
+library(foreach)
+library(readr)
+library(dplyr)
+library(ggpubr)
+library(mosaic)
+
+sclass = read_csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\sclass.csv")
+sclass <- sclass %>%
+  select(trim, mileage, price)
+
+```
+
+
+
+```{r, include = FALSE}
+## Trim level 350
+sclass350 = filter(sclass, trim == "350")
+# To find appropriate xlim
+
+fav_stats(sclass350$mileage)
+
+# Split data into training set and testing set
+sclass350_split = initial_split(sclass350, prop = 0.8)
+sclass350_train = training(sclass350_split)
+sclass350_test = testing(sclass350_split)
+
+### KNN 2 on training data
+knn2 = knnreg(price ~ mileage, data=sclass350_train, k=2)
+
+# Make predictions on test set
+sclass350_test2 = sclass350_test %>%
+  mutate(price_pred = predict(knn2, sclass350_test))
+
+p_test2 = ggplot(data = sclass350_test2) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 2")
+
+
+# now add the predictions
+knn_fit2 <- p_test2 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 5 on training data
+
+knn5 = knnreg(price ~ mileage, data=sclass350_train, k=5)
+
+
+# Make predictions on test set
+sclass350_test5 = sclass350_test %>%
+  mutate(price_pred = predict(knn5, sclass350_test))
+
+p_test5 = ggplot(data = sclass350_test5) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 5")
+
+
+# now add the predictions
+knn_fit5 <- p_test5 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+
+### KNN 25 on training data
+knn25 = knnreg(price ~ mileage, data=sclass350_train, k=25)
+
+
+# Make predictions on test set
+sclass350_test25 = sclass350_test %>%
+  mutate(price_pred = predict(knn25, sclass350_test))
+
+p_test25 = ggplot(data = sclass350_test25) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 25")
+
+
+# now add the predictions
+knn_fit25 <- p_test25 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 10 on training data
+knn10 = knnreg(price ~ mileage, data=sclass350_train, k=10)
+
+
+# Make predictions on test set
+sclass350_test10 = sclass350_test %>%
+  mutate(price_pred = predict(knn10, sclass350_test))
+
+p_test10 = ggplot(data = sclass350_test10) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 10")
+
+
+# now add the predictions
+knn_fit10_350 <- p_test10 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 50 on training data
+knn50 = knnreg(price ~ mileage, data=sclass350_train, k=50)
+
+
+# Make predictions on test set
+sclass350_test50 = sclass350_test %>%
+  mutate(price_pred = predict(knn50, sclass350_test))
+
+p_test50 = ggplot(data = sclass350_test50) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 50")
+
+
+# now add the predictions
+knn_fit50 <- p_test50 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 75 on training data
+knn75 = knnreg(price ~ mileage, data=sclass350_train, k=75)
+
+
+# Make predictions on test set
+sclass350_test75 = sclass350_test %>%
+  mutate(price_pred = predict(knn75, sclass350_test))
+
+p_test75 = ggplot(data = sclass350_test75) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 75")
+
+
+# now add the predictions
+knn_fit75 <- p_test75 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+
+ggarrange(knn_fit2, knn_fit5, knn_fit10_350, knn_fit25, knn_fit50, knn_fit75 + rremove("x.text"), 
+          ncol = 3, nrow = 2)
+
+### RMSE
+
+rmse350 <- c(rmse(knn2, sclass350_test),
+rmse(knn5, sclass350_test),
+rmse(knn10, sclass350_test),
+rmse(knn25, sclass350_test),
+rmse(knn50, sclass350_test),
+rmse(knn75, sclass350_test))
+
+
+### Trim = 65 ###
+sclass650 = filter(sclass, trim == "65 AMG")
+
+# Split data into training set and testing set
+sclass650_split = initial_split(sclass650, prop = 0.8)
+sclass650_train = training(sclass650_split)
+sclass650_test = testing(sclass650_split)
+
+### KNN 2 on training data
+knn2 = knnreg(price ~ mileage, data=sclass650_train, k=2)
+
+# Make predictions on test set
+sclass650_test2 = sclass650_test %>%
+  mutate(price_pred = predict(knn2, sclass650_test))
+
+p_test2 = ggplot(data = sclass650_test2) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 2")
+
+
+# now add the predictions
+knn_fit2 <- p_test2 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 5 on training data
+
+knn5 = knnreg(price ~ mileage, data=sclass650_train, k=5)
+
+
+# Make predictions on test set
+sclass650_test5 = sclass650_test %>%
+  mutate(price_pred = predict(knn5, sclass650_test))
+
+p_test5 = ggplot(data = sclass650_test5) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 5")
+
+
+# now add the predictions
+knn_fit5 <- p_test5 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 25 on training data
+knn25 = knnreg(price ~ mileage, data=sclass650_train, k=25)
+
+
+# Make predictions on test set
+sclass650_test25 = sclass650_test %>%
+  mutate(price_pred = predict(knn25, sclass650_test))
+
+p_test25 = ggplot(data = sclass650_test25) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 25")
+
+
+# now add the predictions
+knn_fit25 <- p_test25 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+### KNN 10 on training data
+knn10 = knnreg(price ~ mileage, data=sclass650_train, k=10)
+
+
+# Make predictions on test set
+sclass650_test10 = sclass650_test %>%
+  mutate(price_pred = predict(knn10, sclass650_test))
+
+p_test10 = ggplot(data = sclass650_test10) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 10")
+
+
+# now add the predictions
+knn_fit10 <- p_test10 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+### KNN 50 on training data
+knn50 = knnreg(price ~ mileage, data=sclass650_train, k=50)
+
+
+# Make predictions on test set
+sclass650_test50 = sclass650_test %>%
+  mutate(price_pred = predict(knn50, sclass650_test))
+
+p_test50 = ggplot(data = sclass650_test50) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 50")
+
+
+# now add the predictions
+knn_fit50 <- p_test50 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+
+### KNN 75 on training data
+knn75 = knnreg(price ~ mileage, data=sclass650_train, k=75)
+
+
+# Make predictions on test set
+sclass65_test75 = sclass650_test %>%
+  mutate(price_pred = predict(knn75, sclass650_test))
+
+p_test75 = ggplot(data = sclass65_test75) + 
+  geom_point(mapping = aes(x = mileage, y = price), alpha=0.2) +
+  xlim(0, 180000) +
+  labs(title = "K = 75")
+
+
+# now add the predictions
+knn_fit75 <- p_test75 + geom_line(aes(x = mileage, y = price_pred), color='red', size=1.5)
+
+
+ggarrange(knn_fit2, knn_fit5, knn_fit10, knn_fit25, knn_fit50, knn_fit75 + rremove("x.text"), 
+          ncol = 3, nrow = 2)
+
+### RMSE
+
+rmse65 <- c(rmse(knn2, sclass650_test),
+rmse(knn5, sclass650_test),
+rmse(knn10, sclass650_test),
+rmse(knn25, sclass650_test),
+rmse(knn50, sclass650_test),
+rmse(knn75, sclass650_test))
+```
+```{r, include = FALSE}
+K = c(2, 5, 10, 25, 50, 75)
+rmse_K = data.frame(K, rmse350, rmse65)
+
+```
+
+
+
+```{r, echo = FALSE}
+rmse_K
+ggplot(rmse_K) +
+  geom_line(aes(x = K, y = rmse350)) + 
+  scale_x_reverse() +
+  geom_vline(xintercept = 10, color = 'red', size = 1.5) + 
+  labs(x = "K",
+       y = "RMSE",
+       title = "RMSE for 350 Trim")
+```
+The RMSEs out of sample for 350 Trim and 65 AMG Trim are both minimized at K = 10. This may be because 10 is around the median value for K, and does the best at the minimizing bias-variance tradeoff. 
+
+```{r, include = FALSE}
+
+# minimum occurs at K = 10 with RMSE of 8119.2
+rmse_K %>%
+  summarize(min = min(rmse350))
+
+# RMSE vs K for 65 AMG
+rmse_K %>%
+  summarize(min = min(rmse65))
+```
+```{r, echo = FALSE}
+ggplot(rmse_K) +
+  geom_line(aes(x = K, y = rmse65)) + 
+  scale_x_reverse() +
+  geom_vline(xintercept = 10, color = 'red', size = 1.5) + 
+  labs(x = "K",
+       y = "RMSE",
+       title = "RMSE for 65 AMG Trim")
+
+
+ggarrange(knn_fit10, knn_fit10_350)
+
+```
