@@ -50,7 +50,7 @@ Average boardings per hour are very similar during workdays. In September, the a
 
 ## Boardings and Temperature
 
-```{r data_wrangling, include = FALSE}
+```{r data_wrangling, echo = FALSE}
 capmetroUT %>%
   ggplot() +
   geom_point(aes(x = temperature, y = boarding, col = weekend)) + 
@@ -79,7 +79,7 @@ rmselm2 <- rmse(lm2, saratoga_test)
 
 ```
 
-```{r saratoga_linear, echo = FALSE}
+```{r saratoga_linear, include = FALSE}
 # My linear model
 
 saratoga_lm = lm(price ~ . -pctCollege - fireplaces - waterfront + bedrooms*bathrooms + landValue*lotSize,  data = saratoga_train)
@@ -159,9 +159,6 @@ The linear regression model produces a lower RMSE than the KNN model, so in this
 ```{r data, include = FALSE}
 german_credit <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\german_credit.csv")
 
-
-ggplot(german_credit) +
-  geom_col(aes(x = history, y = Default))
 
 
 def_prob <- german_credit %>%
@@ -366,4 +363,4 @@ colnames(hotels_final) = c("Expected", "Actual", "Difference")
 knitr::kable(hotels_final, caption = "Tabulated Performance of Best Model")
 ```
 
-According to the table, over 20 folds of the `hotels_val` set there is only a difference of 15 between expected and actual number of bookings with children. With about 5,000 bookings in the 20 folds combined, this number is pretty low.
+According to the table, over 20 folds of the `hotels_val` set there is only a difference of `hotels_final[21,3]` between expected and actual number of bookings with children. With about 5,000 bookings in the 20 folds combined, this number is pretty low.

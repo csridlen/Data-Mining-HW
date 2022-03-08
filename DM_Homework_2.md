@@ -17,6 +17,8 @@ approaching soon they prefer to walk to class.
 
 ## Boardings and Temperature
 
+![](DM_Homework_2_files/figure-markdown_strict/data_wrangling-1.png)
+
 The data seem to be clustered at the right side of the graph, which is
 because the interquartile range for `temperature` is about 60 degrees to
 80 degrees with a median of 73 degrees. Average ridership itself does
@@ -26,8 +28,6 @@ be evenly distributed across temperatures.
 # Problem 2
 
 ## Linear Model
-
-    ## [1] 9590.392
 
 My linear model regresses price on all variables excluding `pctCollege`
 `fireplaces` `waterfront` and includes interactions on `landValue` and
@@ -62,11 +62,11 @@ the approximated lowest RMSE:
     ## 
     ## No pre-processing
     ## Resampling: Cross-Validated (10 fold) 
-    ## Summary of sample sizes: 1242, 1244, 1244, 1243, 1243, 1245, ... 
+    ## Summary of sample sizes: 1245, 1244, 1245, 1244, 1243, 1244, ... 
     ## Resampling results:
     ## 
     ##   RMSE      Rsquared   MAE     
-    ##   59391.93  0.6364438  41958.62
+    ##   58717.65  0.6365483  41515.14
     ## 
     ## Tuning parameter 'intercept' was held constant at a value of TRUE
 
@@ -108,15 +108,15 @@ credit history category.
 
     ##    yhat
     ## y      0    1
-    ##   0 8172   92
-    ##   1  481  255
+    ##   0 8162   92
+    ##   1  486  260
 
     ##    yhat
     ## y      0    1
-    ##   0 8166   98
-    ##   1  484  252
+    ##   0 8165   89
+    ##   1  488  258
 
-    ## [1] 0.001
+    ## [1] -0.0001111111
 
 The out of sample accuracy is almost 94% for the linear model specified,
 which is slightly higher than the baseline 2 model, where `is_summer`
@@ -126,7 +126,7 @@ and `is_holiday` are features I generated from `arrival_date`.
 
     ## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred
 
-    ## [1] 0.928
+    ## [1] 0.939
 
     ## Setting levels: control = 0, case = 1
 
@@ -153,129 +153,129 @@ and `is_holiday` are features I generated from `arrival_date`.
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Fold01</td>
-<td style="text-align: left;">20</td>
-<td style="text-align: left;">22</td>
-<td style="text-align: left;">2</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Fold02</td>
-<td style="text-align: left;">23</td>
-<td style="text-align: left;">24</td>
-<td style="text-align: left;">1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Fold03</td>
-<td style="text-align: left;">17</td>
-<td style="text-align: left;">22</td>
-<td style="text-align: left;">5</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Fold04</td>
-<td style="text-align: left;">17</td>
-<td style="text-align: left;">21</td>
-<td style="text-align: left;">4</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Fold05</td>
 <td style="text-align: left;">23</td>
 <td style="text-align: left;">23</td>
 <td style="text-align: left;">0</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Fold06</td>
-<td style="text-align: left;">24</td>
+<td style="text-align: left;">Fold02</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fold03</td>
+<td style="text-align: left;">18</td>
 <td style="text-align: left;">22</td>
-<td style="text-align: left;">-2</td>
+<td style="text-align: left;">4</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fold04</td>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">-1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fold05</td>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;">-1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fold06</td>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;">5</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Fold07</td>
-<td style="text-align: left;">22</td>
-<td style="text-align: left;">19</td>
-<td style="text-align: left;">-3</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Fold08</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">17</td>
+<td style="text-align: left;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fold09</td>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;">-3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fold10</td>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">-1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fold11</td>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">27</td>
+<td style="text-align: left;">8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fold12</td>
+<td style="text-align: left;">23</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">-8</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fold13</td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;">24</td>
+<td style="text-align: left;">6</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fold14</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">0</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fold15</td>
+<td style="text-align: left;">20</td>
+<td style="text-align: left;">17</td>
+<td style="text-align: left;">-3</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Fold16</td>
 <td style="text-align: left;">21</td>
 <td style="text-align: left;">24</td>
 <td style="text-align: left;">3</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Fold09</td>
-<td style="text-align: left;">23</td>
-<td style="text-align: left;">18</td>
-<td style="text-align: left;">-5</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Fold10</td>
-<td style="text-align: left;">18</td>
-<td style="text-align: left;">15</td>
-<td style="text-align: left;">-3</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Fold11</td>
-<td style="text-align: left;">15</td>
-<td style="text-align: left;">19</td>
-<td style="text-align: left;">4</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Fold12</td>
-<td style="text-align: left;">17</td>
-<td style="text-align: left;">15</td>
-<td style="text-align: left;">-2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Fold13</td>
-<td style="text-align: left;">20</td>
-<td style="text-align: left;">24</td>
-<td style="text-align: left;">4</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Fold14</td>
-<td style="text-align: left;">22</td>
-<td style="text-align: left;">23</td>
-<td style="text-align: left;">1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Fold15</td>
-<td style="text-align: left;">20</td>
-<td style="text-align: left;">19</td>
-<td style="text-align: left;">-1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Fold16</td>
-<td style="text-align: left;">17</td>
-<td style="text-align: left;">18</td>
-<td style="text-align: left;">1</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">Fold17</td>
+<td style="text-align: left;">16</td>
 <td style="text-align: left;">20</td>
-<td style="text-align: left;">20</td>
-<td style="text-align: left;">0</td>
+<td style="text-align: left;">4</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Fold18</td>
-<td style="text-align: left;">20</td>
-<td style="text-align: left;">24</td>
-<td style="text-align: left;">4</td>
+<td style="text-align: left;">23</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">2</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Fold19</td>
-<td style="text-align: left;">19</td>
-<td style="text-align: left;">15</td>
-<td style="text-align: left;">-4</td>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">-3</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Fold20</td>
-<td style="text-align: left;">17</td>
-<td style="text-align: left;">15</td>
-<td style="text-align: left;">-2</td>
+<td style="text-align: left;">16</td>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;">-5</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Total</td>
-<td style="text-align: left;">395</td>
+<td style="text-align: left;">392</td>
 <td style="text-align: left;">402</td>
-<td style="text-align: left;">-7</td>
+<td style="text-align: left;">-10</td>
 </tr>
 </tbody>
 </table>
@@ -283,6 +283,6 @@ and `is_holiday` are features I generated from `arrival_date`.
 Tabulated Performance of Best Model
 
 According to the table, over 20 folds of the `hotels_val` set there is
-only a difference of 15 between expected and actual number of bookings
-with children. With about 5,000 bookings in the 20 folds combined, this
-number is pretty low.
+only a difference of `hotels_final[21,3]` between expected and actual
+number of bookings with children. With about 5,000 bookings in the 20
+folds combined, this number is pretty low.
