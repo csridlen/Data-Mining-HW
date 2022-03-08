@@ -1,0 +1,244 @@
+---
+title: "Homework 2"
+author: "Christina Ridlen"
+date: "`r Sys.Date()`"
+output: md_document
+---
+
+```{r libraries, include = FALSE}
+library(tidyverse)
+library(modelr)
+library(rsample)
+library(mosaic)
+library(caret)
+library(parallel)
+library(foreach)
+library(timeDate)
+library(lubridate, warn.conflicts = TRUE)
+```
+
+```{r data, include = FALSE}
+setwd("C:/")
+capmetroUT <- read.csv("Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\capmetro_UT.csv")
+capmetroUT <- mutate(capmetroUT,
+               day_of_week = factor(day_of_week,
+                 levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+               month = factor(month,
+                 levels=c("Sep", "Oct","Nov")))
+plotdata <- capmetroUT %>%
+  group_by(month, day_of_week, hour_of_day) %>%
+  summarize(avg_board = mean(boarding))
+```
+
+# Problem 1 (DONE)
+
+## Average Boarding
+
+```{r, echo = FALSE }
+
+ggplot(plotdata) +
+  geom_line(aes(hour_of_day, avg_board, col = month)) +
+  facet_wrap(~day_of_week) +
+  labs(title = "Average Boarding Trends for UT Cap Metro Service Sep-Nov 2018",
+       x = "Hour of Day",
+       y = "Average Boardings")
+  
+```
+
+Average boardings per hour are very similar during workdays. In September, the average ridership looks significantly lower than in the other months. It may be because school has just started and students are trying to get a good start to their weeks on Mondays, so they leave with enough time to walk instead of taking the bus. In November, the average number of boardings is not much different than the other months, but falls noticeably in the later days of the week. By now the semester is so busy that students can barely leave the house on time at the beginning of the week, but since the weather is nice and the weekend is approaching soon they prefer to walk to class.
+
+## Boardings and Temperature
+
+```{r data wrangling, include = FALSE}
+capmetroUT %>%
+  ggplot() +
+  geom_point(aes(x = temperature, y = boarding, col = weekend)) + 
+  facet_wrap(~hour_of_day) +
+  labs(title = "Average Boarding by Temperature each Hour",
+       x = 'Temperature',
+       y = "Average number of boardings")
+
+```
+
+The data seem to be clustered at the right side of the graph, which is because the interquartile range for `temperature` is about 60 degrees to 80 degrees with a median of 73 degrees. Average ridership itself does not seem to vary that much with temperature; average boardings seem to be evenly distributed across temperatures.
+
+# Problem 2 (Almost done)
+
+## Linear Model
+
+```{r saratoga_baseline, include = FALSE}
+data("SaratogaHouses")
+saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+saratoga_train = training(saratoga_split)
+saratoga_test = testing(saratoga_split)
+
+# Baseline RMSE
+lm2 = lm(price ~ . - pctCollege - sewer - waterfront - landValue - newConstruction, data=saratoga_train)
+rmselm2 <- rmse(lm2, saratoga_test)
+
+```
+
+```{r saratoga_linear, echo = FALSE}
+# My linear model
+
+saratoga_lm = lm(price ~ . -pctCollege - fireplaces - waterfront + bedrooms*bathrooms + landValue*lotSize,  data = saratoga_train)
+rmse_lm <- rmse(saratoga_lm, saratoga_test)
+rmselm2 - rmse_lm
+```
+
+My linear model regresses price on all variables excluding `pctCollege` `fireplaces` `waterfront` and includes interactions on `landValue` and `lotSize` , as well as on `bathrooms` and `bedrooms.` This model performs better than the "medium" model from class.
+
+## KNN Model
+
+```{r standardize, include = FALSE}
+saratoga_std <- SaratogaHouses %>% mutate_at(c('lotSize', 'age', 'landValue', 'livingArea', 'bedrooms', 'bathrooms', 'rooms'), ~(scale(.) %>% as.vector))
+SaratogaHouses1
+# new train test split
+saratoga_std_split = initial_split(saratoga_std, prop = 0.8)
+saratoga_std_train = training(saratoga_std_split)
+saratoga_std_test = testing(saratoga_std_split)
+
+```
+
+```{r knn_model, include = FALSE}
+knn10 = knnreg(price ~ . -pctCollege - fireplaces - waterfront, data=saratoga_std_train, k=10)
+rmse(knn16, saratoga_std_test)
+```
+
+After trying different variations of the model, a regression with all variables excluding `pctCollege`, `fireplaces` and `waterfront` minimized the RMSE.
+
+## K-Fold Cross Validation
+
+### KNN Model
+
+```{r K_fold, include = FALSE}
+K_folds = 10
+saratoga_std_folds = crossv_kfold(saratoga_std, k = K_folds)
+# Perform over k-grid
+k_grid = c(2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45,
+           50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 250, 300)
+
+cv_grid = foreach(k = k_grid, .combine='rbind') %dopar% {
+  models = map(saratoga_std_folds$train, ~knnreg(price ~  . -pctCollege - fireplaces - waterfront, data=., k=k, use.all=FALSE))
+  errs = map2_dbl(models, saratoga_std_folds$test, modelr::rmse)
+  c(k=k, err = mean(errs), std_err = sd(errs)/sqrt(K_folds))
+} %>% as.data.frame
+```
+
+```{r plot_kfold_knn, echo = FALSE}
+ggplot(cv_grid) + 
+  geom_point(aes(x=k, y=err)) + 
+  geom_errorbar(aes(x=k, ymin = err-std_err, ymax = err+std_err)) + 
+  scale_x_log10() + 
+  labs(x = "K",
+       y = "Average Error")
+# K = 10 is the smoothest
+
+```
+
+Using K-fold Cross Validation, we confirm that K = 10 is the best K for the model, choosing with the "1SE" rule, which results in an RMSE of 60358.23.
+
+### Linear Model
+
+Performing K-fold cross validation with the linear model, we calculate the approximated lowest RMSE:
+
+```{r kfold_lm, echo = FALSE}
+# create folds on nonstandardized variables
+saratoga_folds = crossv_kfold(SaratogaHouses, k = K_folds)
+#use caret package to perform k-fold cross validation
+ctrl = trainControl(method = "cv", number = 10)
+model <- train(price ~ . -pctCollege - fireplaces - waterfront + bedrooms*bathrooms + landValue*lotSize,  data = saratoga_train, method = "lm", trControl = ctrl)
+print(model)
+```
+
+The RMSE for the linear model is approximated to be 61042.39.
+
+The KNN model performs better at achieving lower out-of-sample mean-squared error.
+
+# Problem 3 (DONE)
+
+```{r data, include = FALSE}
+german_credit <- read.csv("Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\german_credit.csv")
+
+
+ggplot(german_credit) +
+  geom_col(aes(x = history, y = Default))
+
+
+def_prob <- german_credit %>%
+  group_by(history) %>%
+  summarize(prob = sum(Default)/n())
+
+
+
+```
+
+```{r plot, echo = FALSE}
+def_prob %>%
+  ggplot() +
+  geom_col(aes(x = history, y = prob, fill = history)) + 
+  labs(title = "Probability of Default by Credit History",
+       x = "Credit History",
+       y = "Probability")
+
+# GLM regression
+logit_default = glm(Default ~ duration + amount + installment + age + history + purpose + foreign, data = german_credit, family ='binomial')
+coef(logit_default) %>% round(2)
+
+```
+
+Ironically, the probability of default increases with credit history score. Looking at the data more closely, this unexpected result comes from poor sampling:
+
+```{r counts, echo = FALSE}
+german_credit %>%
+  mutate(History = history) %>%
+  group_by(History)%>%
+  summarize("Number of Defaults" = sum(Default == 1), N = n())
+```
+
+Obviously, the probability of default when `history == "good"` is high because out of only 89 people sampled in that category, 53 of them had defaulted on their loans. The bank should take a new random sample, making sure to have an equal number of borrowers from each respective credit history category.
+
+# Problem 4
+
+```{r data, include = FALSE}
+#logit regression
+hotels_dev <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\hotels_dev.csv")
+
+hotels_dev <- hotels_dev %>%
+  mutate(arrival_date = as.Date(arrival_date, format = "%Y-%m-%d"), is_holiday = ifelse(arrival_date %in% c(as.Date("2016-01-01"),
+as.Date("2017-01-01"),
+as.Date(Easter(2016:2017)),
+as.Date(USGoodFriday(2016:2017)),
+as.Date(USMemorialDay(2016:2017)),
+as.Date(USIndependenceDay(2015:2017)),
+as.Date(USLaborDay(2015:2016)),
+as.Date(USThanksgivingDay(2015:2016)),
+as.Date(USChristmasDay(2015:2016))), "yes" = 1, "no" = 0), is_summer = ifelse(between(arrival_date, as.Date("2015-07-01"), as.Date("2015-09-20")) | between(arrival_date, as.Date("2016-06-21"), as.Date("2016-09-20")) | between(arrival_date, as.Date("2017-06-21"), as.Date("2017-08-31")), 1, 0))
+
+# Baseline 1
+# train - test split
+hotelsdev_split = initial_split(hotels_dev, prop = 0.8)
+hotelsdev_train = training(hotelsdev_split)
+hotelsdev_test = testing(hotelsdev_split)
+
+logit_hotelsdev = glm(children ~ market_segment + adults + customer_type + is_repeated_guest, data = hotels_dev, family ='binomial')
+rmse(logit_hotelsdev, data = hotelsdev_train)
+
+coef(logit_hotelsdev) %>% round(2)
+
+
+#Baseline 2
+logit_hotel1 <- glm(children ~ . - arrival_date, data = hotels_dev, family='binomial')
+rmse(logit_hotel1, data = hotelsdev_train)
+
+# Best linear model
+lm_best = lm(children ~ hotel*is_summer + hotel*is_holiday + is_holiday + is_summer + stays_in_weekend_nights*is_holiday +  stays_in_week_nights*is_summer + total_of_special_requests + lead_time, data = hotelsdev_train)
+rmse(lm_best, hotelsdev_train)
+# Confusion matrix
+
+predicted <- predict(lm_best, hotelsdev_test, )
+
+
+```
+
+Two features I created from time stamps were indicator variables `is_holiday` and `is_summer` using the `timeDate` library.
