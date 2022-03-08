@@ -15,6 +15,8 @@ library(parallel)
 library(foreach)
 library(timeDate)
 library(lubridate, warn.conflicts = TRUE)
+library(pROC)
+library(knitr)
 ```
 
 ```{r data, include = FALSE}
@@ -30,7 +32,7 @@ plotdata <- capmetroUT %>%
   summarize(avg_board = mean(boarding))
 ```
 
-# Problem 1 (DONE)
+# Problem 1
 
 ## Average Boarding
 
@@ -62,7 +64,7 @@ capmetroUT %>%
 
 The data seem to be clustered at the right side of the graph, which is because the interquartile range for `temperature` is about 60 degrees to 80 degrees with a median of 73 degrees. Average ridership itself does not seem to vary that much with temperature; average boardings seem to be evenly distributed across temperatures.
 
-# Problem 2 (Almost done)
+# Problem 2
 
 ## Linear Model
 
@@ -92,7 +94,7 @@ My linear model regresses price on all variables excluding `pctCollege` `firepla
 
 ```{r standardize, include = FALSE}
 saratoga_std <- SaratogaHouses %>% mutate_at(c('lotSize', 'age', 'landValue', 'livingArea', 'bedrooms', 'bathrooms', 'rooms'), ~(scale(.) %>% as.vector))
-SaratogaHouses1
+
 # new train test split
 saratoga_std_split = initial_split(saratoga_std, prop = 0.8)
 saratoga_std_train = training(saratoga_std_split)
@@ -102,7 +104,7 @@ saratoga_std_test = testing(saratoga_std_split)
 
 ```{r knn_model, include = FALSE}
 knn10 = knnreg(price ~ . -pctCollege - fireplaces - waterfront, data=saratoga_std_train, k=10)
-rmse(knn16, saratoga_std_test)
+rmse(knn10, saratoga_std_test)
 ```
 
 After trying different variations of the model, a regression with all variables excluding `pctCollege`, `fireplaces` and `waterfront` minimized the RMSE.
@@ -132,11 +134,11 @@ ggplot(cv_grid) +
   scale_x_log10() + 
   labs(x = "K",
        y = "Average Error")
-# K = 10 is the smoothest
+# K = 15 has lowest error
 
 ```
 
-Using K-fold Cross Validation, we confirm that K = 10 is the best K for the model, choosing with the "1SE" rule, which results in an RMSE of 60358.23.
+Using K-fold Cross Validation, we confirm that K = 15 is the best K for the model, choosing with the "1SE" rule, which results in an RMSE of 61010.
 
 ### Linear Model
 
@@ -151,11 +153,9 @@ model <- train(price ~ . -pctCollege - fireplaces - waterfront + bedrooms*bathro
 print(model)
 ```
 
-The RMSE for the linear model is approximated to be 61042.39.
+The linear regression model produces a lower RMSE than the KNN model, so in this case, a more general parametric model might be more useful for this data in particular. A highlight of using a linear regression model is that we can use field-specific knowledge to choose our features, rather than letting KNN regression do the work for us.
 
-The KNN model performs better at achieving lower out-of-sample mean-squared error.
-
-# Problem 3 (DONE)
+# Problem 3
 
 ```{r data, include = FALSE}
 german_credit <- read.csv("Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\german_credit.csv")
@@ -202,9 +202,9 @@ Obviously, the probability of default when `history == "good"` is high because o
 
 ```{r data, include = FALSE}
 #logit regression
-hotels_dev <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\hotels_dev.csv")
+hotelsdev <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\hotels_dev.csv")
 
-hotels_dev <- hotels_dev %>%
+hotelsdev <- hotelsdev %>%
   mutate(arrival_date = as.Date(arrival_date, format = "%Y-%m-%d"), is_holiday = ifelse(arrival_date %in% c(as.Date("2016-01-01"),
 as.Date("2017-01-01"),
 as.Date(Easter(2016:2017)),
@@ -217,28 +217,154 @@ as.Date(USChristmasDay(2015:2016))), "yes" = 1, "no" = 0), is_summer = ifelse(be
 
 # Baseline 1
 # train - test split
-hotelsdev_split = initial_split(hotels_dev, prop = 0.8)
+
+hotelsdev_split = initial_split(hotelsdev, prop = 0.8)
 hotelsdev_train = training(hotelsdev_split)
 hotelsdev_test = testing(hotelsdev_split)
 
-logit_hotelsdev = glm(children ~ market_segment + adults + customer_type + is_repeated_guest, data = hotels_dev, family ='binomial')
-rmse(logit_hotelsdev, data = hotelsdev_train)
+b1 <- glm(children ~ market_segment + adults + customer_type + is_repeated_guest, family = 'binomial', data = hotelsdev_train)
 
-coef(logit_hotelsdev) %>% round(2)
+predicted1 <- predict(b1, hotelsdev_test, type = 'response')
+yhat1<- ifelse(predicted1 > .5, 1, 0)
+confusion1= table(y = hotelsdev_test$children, 
+                  yhat = yhat1)
+confusion1
+sum(diag(confusion1))/sum(confusion1)
 
 
-#Baseline 2
-logit_hotel1 <- glm(children ~ . - arrival_date, data = hotels_dev, family='binomial')
-rmse(logit_hotel1, data = hotelsdev_train)
 
-# Best linear model
-lm_best = lm(children ~ hotel*is_summer + hotel*is_holiday + is_holiday + is_summer + stays_in_weekend_nights*is_holiday +  stays_in_week_nights*is_summer + total_of_special_requests + lead_time, data = hotelsdev_train)
-rmse(lm_best, hotelsdev_train)
-# Confusion matrix
 
-predicted <- predict(lm_best, hotelsdev_test, )
+#Baseline 2 
+baseline_2 <- glm(children ~ . - arrival_date - is_summer - is_holiday, data = hotelsdev_train, family='binomial')
 
+predicted2 <- predict(baseline_2, hotelsdev_test, type = 'response')
+yhat2<- ifelse(predicted2 > 0.5, 1, 0)
+confusion2 = table(y = hotelsdev_test$children,
+                   yhat = yhat2)
+confusion2
+b2ac <- sum(diag(confusion2))/sum(confusion2)
+
+
+# Baseline 3
+
+lm_best =  glm(children ~ . - arrival_date + is_summer*hotel + is_holiday*hotel + is_summer*stays_in_week_nights, family = 'binomial', data = hotelsdev_train)
+
+             
+```
+
+```{r confusion_dev, include = FALSE}
+
+predicted <- predict(lm_best, hotelsdev_test, type = 'response')
+yhat <- ifelse(predicted > 0.5, 1, 0)
+confusion = table(y = hotelsdev_test$children, 
+                  yhat = yhat)
+confusion
+best_ac <- sum(diag(confusion))/sum(confusion)
+b2ac - best_ac
+```
+
+```{r compare_acc, echo = FALSE}
+baseline_2 <- glm(children ~ . - arrival_date - is_summer - is_holiday, data = hotelsdev_train, family='binomial')
+
+predicted2 <- predict(baseline_2, hotelsdev_test, type = 'response')
+yhat2<- ifelse(predicted2 > 0.5, 1, 0)
+confusion2 = table(y = hotelsdev_test$children,
+                   yhat = yhat2)
+confusion2
+b2ac <- sum(diag(confusion2))/sum(confusion2)
+
+lm_best <- glm(children ~ . - arrival_date + is_summer*hotel + is_holiday*hotel + is_summer*stays_in_week_nights, family = 'binomial', data = hotelsdev_train)
+
+predicted <- predict(lm_best, hotelsdev_test, type = 'response')
+yhat <- ifelse(predicted > 0.5, 1, 0)
+confusion = table(y = hotelsdev_test$children, 
+                  yhat = yhat)
+confusion
+best_ac <- sum(diag(confusion))/sum(confusion)
+b2ac - best_ac
+```
+
+The out of sample accuracy is almost 94% for the linear model specified, which is slightly higher than the baseline 2 model, where `is_summer` and `is_holiday` are features I generated from `arrival_date`.
+
+### Model Validation: Step 1
+
+```{r hotels_val, echo = FALSE}
+
+hotels_val <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\hotels_val.csv")
+
+hotels_val <- hotels_val %>%
+  mutate(arrival_date = as.Date(arrival_date, format = "%Y-%m-%d"), is_holiday = ifelse(arrival_date %in% c(as.Date("2016-01-01"),
+as.Date("2017-01-01"),
+as.Date(Easter(2016:2017)),
+as.Date(USGoodFriday(2016:2017)),
+as.Date(USMemorialDay(2016:2017)),
+as.Date(USIndependenceDay(2015:2017)),
+as.Date(USLaborDay(2015:2016)),
+as.Date(USThanksgivingDay(2015:2016)),
+as.Date(USChristmasDay(2015:2016))), "yes" = 1, "no" = 0), is_summer = ifelse(between(arrival_date, as.Date("2015-07-01"), as.Date("2015-09-20")) | between(arrival_date, as.Date("2016-06-21"), as.Date("2016-09-20")) | between(arrival_date, as.Date("2017-06-21"), as.Date("2017-08-31")), 1, 0))
+
+
+val_split = initial_split(hotels_val, prop = 0.8)
+val_train = training(val_split)
+val_test = testing(val_split)
+
+
+# Baseline 3
+lm_best= glm(children ~ . - arrival_date + is_summer*hotel + is_holiday*hotel + is_summer*stays_in_week_nights, family = 'binomial', data = val_train)
+
+
+#ROC Curve
+predicted_val <- predict(lm_best, val_test, type = 'response')
+y_hat_val = ifelse(predicted_val > 0.5, 1, 0)
+confusion_val = table(y = val_test$children, yhat = y_hat_val)
+sum(diag(confusion_val))/sum(confusion_val)
+
+roc_val <- roc(val_test$children, predicted_val)
+
+
+auc <- round(auc(val_test$children, predicted_val), 4)
+
+ggroc(roc_val) + 
+  ggtitle(paste0('ROC Curve ', '(AUC = ', auc, ')'))
+```
+
+### Model Validation: Step 2
+
+```{r K_fold, include = FALSE}
+K_folds = 20
+val_folds = createFolds(hotels_val$children, k = K_folds)
+
+val_predict <- lapply(val_folds, function(x) {
+  test = hotels_val[x,]
+  pred = predict(lm_best, test, type = 'response')
+  return(pred)
+})
+
+val_actual = lapply(val_folds, function(x) {
+  test = hotels_val[x,]
+  return(sum(test$children))
+})
+
+hotels_predicted = c()
+hotels_difference = c()
+for (k in seq(1, K_folds)) {
+  hotels_predicted = append(hotels_predicted, as.integer(sum(unlist(val_predict[k]))))
+  hotels_difference = append(hotels_difference, as.integer(unlist(val_actual[k])) - as.integer(hotels_predicted[k]))
+}
+
+hotels_final = cbind(hotels_predicted, val_actual, hotels_difference)
+hotels_final = rbind(hotels_final, hotels_final %>% apply(2, unlist) %>% apply(2, abs) %>% apply(2, sum))
+
+hotels_final
+rownames(hotels_final)[21] = "Total"
+hotels_final[21, 3] = as.integer(hotels_final[21, 1]) - as.integer(hotels_final[21, 2])
+
+colnames(hotels_final) = c("Expected", "Actual", "Difference")
 
 ```
 
-Two features I created from time stamps were indicator variables `is_holiday` and `is_summer` using the `timeDate` library.
+```{r echo = FALSE}
+knitr::kable(hotels_final, caption = "Tabulated Performance of Best Model")
+```
+
+According to the table, over 20 folds of the `hotels_val` set there is only a difference of 15 between expected and actual number of bookings with children. With about 5,000 bookings in the 20 folds combined, this number is pretty low.
