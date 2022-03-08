@@ -20,7 +20,7 @@ library(knitr)
 ```
 
 ```{r, include = FALSE}
-capmetroUT <- read.csv("C:/Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\capmetro_UT.csv")
+capmetroUT <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\capmetro_UT.csv")
 capmetroUT <- mutate(capmetroUT,
                day_of_week = factor(day_of_week,
                  levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
@@ -157,7 +157,7 @@ The linear regression model produces a lower RMSE than the KNN model, so in this
 # Problem 3
 
 ```{r data, include = FALSE}
-german_credit <- read.csv("C:/Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\german_credit.csv")
+german_credit <- read.csv("C:\\Users\\tinar\\OneDrive\\Desktop\\repos\\ECO395M\\data\\german_credit.csv")
 
 
 ggplot(german_credit) +
