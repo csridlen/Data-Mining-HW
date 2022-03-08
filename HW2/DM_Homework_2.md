@@ -29,27 +29,12 @@ be evenly distributed across temperatures.
 
 ## Linear Model
 
-    # My linear model
-
-    saratoga_lm = lm(price ~ . -pctCollege - fireplaces - waterfront + bedrooms*bathrooms + landValue*lotSize,  data = saratoga_train)
-    rmse_lm <- rmse(saratoga_lm, saratoga_test)
-    rmselm2 - rmse_lm
-
-    ## [1] 5968.17
-
 My linear model regresses price on all variables excluding `pctCollege`
 `fireplaces` `waterfront` and includes interactions on `landValue` and
 `lotSize` , as well as on `bathrooms` and `bedrooms.` This model
 performs better than the “medium” model from class.
 
 ## KNN Model
-
-    saratoga_std <- SaratogaHouses %>% mutate_at(c('lotSize', 'age', 'landValue', 'livingArea', 'bedrooms', 'bathrooms', 'rooms'), ~(scale(.) %>% as.vector))
-
-    # new train test split
-    saratoga_std_split = initial_split(saratoga_std, prop = 0.8)
-    saratoga_std_train = training(saratoga_std_split)
-    saratoga_std_test = testing(saratoga_std_split)
 
 After trying different variations of the model, a regression with all
 variables excluding `pctCollege`, `fireplaces` and `waterfront`
